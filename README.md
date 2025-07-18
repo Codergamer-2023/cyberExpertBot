@@ -120,4 +120,4 @@ This project is open-source and available under the **MIT License**.
 ## ✍️ Author
 
 Manish – AI/ML Enthusiast & Cybersecurity Bot Developer  
-Connect with me on [LinkedIn](linkedin.com/in/manish-saini-9255aa28b) | GitHub: [Manish_Saini](https://github.com/Codergamer-2023)
+Connect with me on [LinkedIn](https://linkedin.com/in/manish-saini-9255aa28b) | GitHub: [Manish_Saini](https://github.com/Codergamer-2023)
