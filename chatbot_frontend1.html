@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Groq Cybersecurity Expert</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #0f172a;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: white;
+    }
+
+    header {
+      background-color: #1e293b;
+      padding: 20px;
+      font-size: 1.8rem;
+      text-align: center;
+      font-weight: bold;
+      color: #facc15;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .chat-container {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background-color: #1e293b;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 1rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: #3b82f6;
+      color: white;
+      border-bottom-right-radius: 0;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background-color: #f1f5f9;
+      color: #1f2937;
+      border-bottom-left-radius: 0;
+    }
+
+    .input-section {
+      background-color: #1e293b;
+      padding: 15px;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 14px;
+      border-radius: 30px;
+      font-size: 1rem;
+      border: none;
+      outline: none;
+      background-color: #f8fafc;
+      color: #1f2937;
+    }
+
+    button {
+      background-color: #3b82f6;
+      border: none;
+      padding: 14px 24px;
+      color: white;
+      font-size: 1rem;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <header>Ask the Cybersecurity Expert</header>
+
+  <div class="chat-container" id="chatArea">
+    <!-- Chat messages will be inserted here -->
+  </div>
+
+  <div class="input-section">
+    <input type="text" id="userInput" placeholder="Type your question..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const userInput = document.getElementById("userInput").value.trim();
+      if (!userInput) return;
+
+      const chatArea = document.getElementById("chatArea");
+      const userMsgDiv = document.createElement("div");
+      userMsgDiv.className = "message user";
+      userMsgDiv.textContent = userInput;
+      chatArea.appendChild(userMsgDiv);
+      document.getElementById("userInput").value = "";
+
+      let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      const outputElement = document.createElement("div");
+      outputElement.className = "message bot";
+      outputElement.textContent = "Loading...";
+      chatArea.appendChild(outputElement);
+      chatArea.scrollTop = chatArea.scrollHeight;
+
+      let messages = [
+        {
+          role: "system",
+          content: `You are a highly experienced Cybersecurity Expert with over 15 years of hands-on experience in securing systems, networks, and applications from digital threats. Your expertise spans ethical hacking, vulnerability assessments, malware analysis, cyber risk management, digital forensics, and secure software development.
+
+You communicate in a professional yet approachable manner, always aiming to explain even the most complex cybersecurity concepts in clear, understandable language—suitable for both technical and non-technical users. You adhere strictly to the CIA Triad principles: Confidentiality, Integrity, and Availability, and always promote legal and ethical security practices.
+
+Your role is to guide users through topics strictly related to cybersecurity, including:
+- Ethical hacking and penetration testing
+- Network and endpoint security
+- Threat analysis and risk mitigation
+- Malware investigation and reverse engineering
+- Cloud security strategies
+- Secure coding and application hardening
+- Digital forensics and incident response
+- Cybersecurity policies, laws, and compliance standards
+
+⚠️ If a user asks a question unrelated to cybersecurity (such as entertainment, history, sports, etc.), do not answer. Instead, politely respond with:
+> "I'm sorry, I am only trained to assist with cybersecurity-related topics."
+
+🧠 Memory Introduction:
+Before offering assistance, you must politely ask for the user's **name** to personalize the conversation. If the user doesn't provide their name, gently ask again 3 to 4 times, varying your wording each time. Do not provide any actual assistance or responses to their queries until they share their name.
+
+If the user refuses to provide their name after several polite prompts, you may continue, but internally record all user messages under a generic label such as "User".
+
+Never break character. Stay professional, helpful, focused on cybersecurity, and always within the domain of ethical and legal practices.`
+        },
+      ];
+
+      chatHistory.forEach((chat) => {
+        messages.push({ role: "user", content: String(chat.user) });
+        messages.push({ role: "assistant", content: String(chat.bot) });
+      });
+
+      messages.push({ role: "user", content: String(userInput) });
+
+      const response = await fetch("http://127.0.0.1:5002", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: messages }),
+      });
+
+      if (!response.ok) {
+        outputElement.textContent = "Error: " + response.status;
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        outputElement.textContent = fullText;
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+
+      chatHistory.push({
+        user: userInput,
+        bot: fullText,
+      });
+
+      localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+    }
+
+    window.onload = () => {
+  const chatArea = document.getElementById("chatArea");
+  const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+
+  chatHistory.forEach((chat) => {
+    const userMsgDiv = document.createElement("div");
+    userMsgDiv.className = "message user";
+    userMsgDiv.textContent = chat.user;
+    chatArea.appendChild(userMsgDiv);
+
+    const botMsgDiv = document.createElement("div");
+    botMsgDiv.className = "message bot";
+    botMsgDiv.textContent = chat.bot;
+    chatArea.appendChild(botMsgDiv);
+  });
+
+  chatArea.scrollTop = chatArea.scrollHeight;
+};
+
+document.getElementById("userInput").addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault(); // Prevent new line
+    sendMessage();
+  }
+});
+
+
+  </script>
+</body>
+</html>
