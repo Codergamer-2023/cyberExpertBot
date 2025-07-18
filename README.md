@@ -46,7 +46,7 @@ Cybersecurity-Expert-Chatbot/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/cybersecurity-chatbot.git
+git clone https://github.com/Codergamer-2023/cyberExpertBot.git
 cd cybersecurity-chatbot
 ```
 
